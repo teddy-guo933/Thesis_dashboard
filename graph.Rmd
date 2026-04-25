@@ -1,0 +1,434 @@
+---
+title: "Thesis visulization graph"
+author: "Zihan(Teddy)Guo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(dplyr)
+library(haven)
+library(ggplot2)
+library(plotly)
+library(gtsummary)
+```
+
+```{r,include=FALSE}
+library(dplyr)
+library(gtsummary)
+library(haven)
+
+demographics<- read_sas("/Volumes/rsphprojects-ts/mgoodm2/DSD Pathways/Zihan Guo/Datasets/demographics_classic.sas7bdat")
+labs<-read_sas("/Volumes/rsphprojects-ts/mgoodm2/DSD Pathways/Zihan Guo/Datasets/labs_bp_final.sas7bdat")
+cah <- left_join(demographics, labs,
+                 by = c("STUDYID" = "studyid"))
+
+names(cah)
+dup_vars <- unique(sub("\\.[xy]$", "", names(cah)[grepl("\\.x$|\\.y$", names(cah))]))
+dup_vars
+cah <- cah %>%
+  rename(
+    site = site.x,
+    age_at_index = age_at_index.x,
+    raceeth = raceeth.x
+  ) %>%
+  select(
+    -site.y,
+    -age_at_index.y,
+    -raceeth.y
+  )
+cah <- cah %>%
+  select(-cah, -sex_admin, -index_date, -birth_date)
+```
+
+
+## Introduction
+
+<div style="font-size:18px; line-height:1.6;">
+This report compares person-level average cardiometabolic indicators between CAH patients and female referents.Because participants may have multiple visits, each visualization uses the **mean value across visits for each participant**, so each dot represents one person.
+</div>
+
+## Dataset Description
+
+The data source is confidential and cannot be publicly shared. The analytic sample includes 115 patients with congenital adrenal hyperplasia (CAH) and 1,150 matched female referents. Data were obtained from electronic health records from three Kaiser Permanente sites. The study population included health plan members enrolled between January 1, 1988 and January 31, 2017. Each site used a four-step EHR screening algorithm to identify members who were potentially eligible for cohort inclusion.
+
+
+```{r helper-function}
+make_plot_data <- function(data, var_name) {
+  data %>%
+    filter(CAH == 1 | (CAH == 0 & SEX_ADMIN == "F")) %>%
+    group_by(STUDYID, CAH) %>%
+    summarise(
+      mean_value = mean(.data[[var_name]], na.rm = TRUE),
+      n_visits_nonmissing = sum(!is.na(.data[[var_name]])),
+      .groups = "drop"
+    ) %>%
+    filter(!is.na(mean_value), !is.nan(mean_value), n_visits_nonmissing > 0) %>%
+    mutate(
+      group = ifelse(CAH == 1, "Congenital Adrenal Hyperplasia", "Female Referents")
+    )
+}
+make_interactive_plot_clean <- function(plot_data, y_label, plot_title) {
+  summary_dat <- plot_data %>%
+    group_by(group) %>%
+    summarise(
+      n = n(),
+      mean_group = mean(mean_value, na.rm = TRUE),
+      median_group = median(mean_value, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      hover_text = paste0(
+        "Group: ", group,
+        "<br>Mean participant value: ", round(mean_group, 1),
+        "<br>Median participant value: ", round(median_group, 1),
+        "<br>N participants: ", n
+      )
+    )
+  
+  p <- ggplot(plot_data, aes(x = group, y = mean_value, fill = group)) +
+    geom_boxplot(width = 0.5, alpha = 0.65, outlier.shape = NA) +
+    geom_point(
+      data = summary_dat,
+      aes(x = group, y = mean_group, text = hover_text),
+      shape = 23,
+      size = 4,
+      fill = "white",
+      color = "black",
+      inherit.aes = FALSE
+    ) +
+    labs(
+      x = NULL,
+      y = y_label,
+      title = plot_title,
+      subtitle ="Hover over the white diamond to view group summary statistics"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position = "none",
+      panel.grid.minor = element_blank(),
+      axis.text.x = element_text(face = "bold", size = 12),
+      axis.title.y = element_text(size = 13),
+      plot.title = element_text(face = "bold",size=13),
+      plot.subtitle = element_text(size = 11)
+    )
+  ggplotly(p, tooltip = "text")
+}
+```
+
+## HTML Widget 1: Cardiometabolic Indicator Comparisons {.tabset}
+
+<div style="color:#005A9C; font-weight:bold; margin-bottom:15px;">
+Hover over the white diamond in each plot to view the group mean, median, and number of participants.
+</div>
+
+### Systolic Blood Pressure
+```{r sbp-plot}
+sbp_dat <- make_plot_data(cah, "systolic_mean")
+make_interactive_plot_clean(
+  plot_data = sbp_dat,
+  y_label = "Mean Systolic Blood Pressure (mm Hg)",
+  plot_title = "Mean Systolic Blood Pressure by Group"
+)
+```
+
+### Diastolic Blood Pressure
+```{r dbp-plot}
+dbp_dat <- make_plot_data(cah, "diastolic_mean")
+make_interactive_plot_clean(
+  plot_data = dbp_dat,
+  y_label = "Mean Diastolic Blood Pressure (mm Hg)",
+  plot_title = "Mean Diastolic Blood Pressure by Group"
+)
+```
+
+### Hemoglobin
+
+```{r hgb-plot}
+hgb_dat <- make_plot_data(cah, "HGB")
+make_interactive_plot_clean(
+  plot_data = hgb_dat,
+  y_label = "Mean Hemoglobin (g/dL)",
+  plot_title = "Mean Hemoglobin by Group"
+)
+```
+
+### Hematocrit
+
+```{r hct-plot}
+hct_dat <- make_plot_data(cah, "HCT")
+make_interactive_plot_clean(
+  plot_data = hct_dat,
+  y_label = "Mean Hematocrit (%)",
+  plot_title = "Mean Hematocrit by Group"
+)
+```
+
+### Random Glucose Level
+
+```{r ran-glu-plot}
+glucose_dat <- make_plot_data(cah, "GLU_RAN")
+make_interactive_plot_clean(
+  plot_data = glucose_dat,
+  y_label = "Mean Random Glucose (mg/dL)",
+  plot_title = "Mean Random Glucose by Group"
+)
+```
+
+### Fasting Random Glucose Level
+
+```{r ran-f-plot}
+fastingglucose_dat <- make_plot_data(cah, "GLU_F")
+make_interactive_plot_clean(
+  plot_data = fastingglucose_dat,
+  y_label = "Mean Fasting Random Glucose (mg/dL)",
+  plot_title = "Mean Fasting Random Glucose by Group"
+)
+```
+
+### Total Cholesterol 
+```{r TC-plot}
+cholesterol_dat <- make_plot_data(cah, "TOT_CHOLES")
+make_interactive_plot_clean(
+  plot_data = hct_dat,
+  y_label = "Mean Total Cholesterol (mg/dL)",
+  plot_title = "Mean Total Cholesterol by Group"
+)
+```
+
+### high-density lipoprotein
+```{r HDL-plot}
+hdl_dat <- make_plot_data(cah, "HDL")
+make_interactive_plot_clean(
+  plot_data = hdl_dat,
+  y_label = "Mean High-density Lipoprotein (mg/dL)",
+  plot_title = "Mean High-density lipoprotein by Group"
+)
+```
+
+### HGBA1C 
+```{r hgba1c-plot}
+hgba1c_dat <- make_plot_data(cah, "HGBA1C")
+make_interactive_plot_clean(
+  plot_data = hgba1c_dat,
+  y_label = "Mean HGBA1C (%)",
+  plot_title = "Mean HGBA1C by Group"
+)
+```
+
+### Low-density lipoprotein
+```{r ldl-plot}
+ldl_dat <- make_plot_data(cah, "LDL_DIRECT")
+make_interactive_plot_clean(
+  plot_data = ldl_dat,
+  y_label = "Mean Low-density Lipoprotein (mg/dL)",
+  plot_title = "Mean Low-density Lipoprotein by Group"
+)
+```
+
+### Triglycerides Fasting 
+```{r TGD-plot}
+tdg_dat <- make_plot_data(cah, "TRIGL_F")
+make_interactive_plot_clean(
+  plot_data = tdg_dat,
+  y_label = "Mean Triglycerides (mg/dL)",
+  plot_title = "Mean Triglycerides by Group"
+)
+```
+
+**Key takeaways:**  
+This widget compares participant-level mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, with boxplots summarizing the center and spread of the distributions in each group, and the white diamond marking the group mean. Hovering over the white diamond allows viewers to see additional summary information, including the group mean, median, and number of participants.
+
+
+```{r line-helper-function}
+make_age_line_plot <- function(data, var_name, y_label, plot_title) {
+  line_dat <- data %>%
+    filter(CAH == 1 | (CAH == 0 & SEX_ADMIN == "F")) %>%
+    filter(!is.na(age_at_test), !is.na(.data[[var_name]])) %>%
+    mutate(
+      age_round = round(age_at_test),
+      group = ifelse(CAH == 1, "Congenital Adrenal Hyperplasia", "Female Referents")
+    ) %>%
+    group_by(group, age_round) %>%
+    summarise(
+      mean_value = mean(.data[[var_name]], na.rm = TRUE),
+      n_obs = n(),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      hover_text = paste0(
+        "Group: ", group,
+        "<br>Age: ", age_round,
+        "<br>Mean value: ", round(mean_value, 2),
+        "<br>Number of records: ", n_obs
+      )
+    )
+  
+  p_line <- ggplot(
+    line_dat,
+    aes(
+      x = age_round,
+      y = mean_value,
+      color = group,
+      text = hover_text
+    )
+  ) +
+    geom_line(linewidth = 1) +
+    geom_point(size = 1.8) +
+    labs(
+      x = "Age (years)",
+      y = y_label,
+      title = plot_title,
+      color = NULL
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 11),
+      legend.position = "bottom",
+      legend.text = element_text(size = 11)
+    )
+  
+  ggplotly(p_line, tooltip = "text", height = 550) %>%
+    layout(
+      margin = list(t = 80, b = 80),
+      legend = list(
+        orientation = "h",
+        x = 0,
+        y = -0.2
+      )
+    )
+}
+```
+
+## HTML Widget 2: Mean Cardiometabolic indicators by Age {.tabset}
+
+<div style="color:#005A9C; font-weight:bold; margin-bottom:15px;">
+Hover over the dots in each plot to view the participants information.
+</div>
+
+### Systolic Blood Pressure
+```{r age-sbp-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "systolic_mean",
+  y_label = "Mean Systolic Blood Pressure (mm Hg)",
+  plot_title = "Mean Systolic Blood Pressure by Age and Group"
+)
+```
+
+### Diastolic Blood Pressure
+```{r age-dbp-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "diastolic_mean",
+  y_label = "Mean Diastolic Blood Pressure (mm Hg)",
+  plot_title = "Mean Diastolic Blood Pressure by Age and Group"
+)
+```
+
+### Hemoglobin
+```{r age-hgb-plot}
+
+make_age_line_plot(
+  data = cah,
+  var_name = "HGB",
+  y_label = "Mean Hemoglobin (g/dL)",
+  plot_title = "Mean Hemoglobin by Age and Group"
+)
+
+```
+
+### Hematocrit
+```{r age-hct-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "HCT",
+  y_label = "Mean Hematocrit (%)",
+  plot_title = "Mean Hematocrit by Age and Group"
+)
+```
+
+### Random Glucose Level
+```{r age-ran-glu-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "GLU_RAN",
+  y_label = "Mean Random Glucose (mg/dL)",
+  plot_title = "Mean Random Glucose by Age and Group"
+)
+```
+
+### Fasting Glucose Level
+```{r age-fasting-glu-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "GLU_F",
+  y_label = "Mean Fasting Glucose (mg/dL)",
+  plot_title = "Mean Fasting Glucose by Age and Group"
+)
+```
+
+### Total Cholesterol
+
+```{r age-tc-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "TOT_CHOLES",
+  y_label = "Mean Total Cholesterol (mg/dL)",
+  plot_title = "Mean Total Cholesterol by Age and Group"
+)
+```
+
+### High-density Lipoprotein
+
+```{r age-hdl-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "HDL",
+  y_label = "Mean High-density Lipoprotein (mg/dL)",
+  plot_title = "Mean High-density Lipoprotein by Age and Group"
+)
+```
+
+### Hemoglobin A1c
+```{r age-hgba1c-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "HGBA1C",
+  y_label = "Mean Hemoglobin A1c (%)",
+  plot_title = "Mean Hemoglobin A1c by Age and Group"
+)
+```
+
+### Low-density Lipoprotein
+```{r age-ldl-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "LDL_DIRECT",
+  y_label = "Mean Low-density Lipoprotein (mg/dL)",
+  plot_title = "Mean Low-density Lipoprotein by Age and Group"
+)
+```
+
+### Fasting Triglycerides
+```{r age-tgd-plot}
+make_age_line_plot(
+  data = cah,
+  var_name = "TRIGL_F",
+  y_label = "Mean Fasting Triglycerides (mg/dL)",
+  plot_title = "Mean Fasting Triglycerides by Age and Group"
+)
+```
+
+**Key takeaways:**  
+This widget compares age-related patterns in mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, allowing viewers to examine whether values change similarly across age in the two groups and whether one group tends to have higher values at certain ages. Hovering over each point provides additional information on age, group-specific mean value, and the number of observations contributing to that estimate.
+
+
+
+## Real-world Impact
+
+This dashboard helps summarize cardiometabolic patterns among patients with congenital adrenal hyperplasia (CAH), a rare condition that may require lifelong clinical monitoring. By comparing CAH patients with matched female referents, the dashboard can help identify which cardiometabolic indicators may deserve closer attention in future clinical or epidemiologic research.
+

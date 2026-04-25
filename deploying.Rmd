@@ -1,0 +1,187 @@
+---
+title: "Introduction to deploying dashboards and shiny apps"
+author: "DATA 555"
+output: ioslides_presentation
+---
+
+# The internet
+
+## What is the internet?
+
+* __Question__: How does the internet work?
+
+## What is the internet?
+
+* The internet is a system of interconnected computers that communicate in a standardized way.
+  * TCP = transmission control protocol = how data are shared across networks
+  * IP = internet protocol = standardized addresses and routings, so data are delivered to the correct place
+
+## What is the internet?
+
+* To interact with the internet, we often use a __client-server model__. 
+  * Your computer (the client) sends a __request__ to a server (some other computer somewhere in the world)
+  * The server responds by sending back the requested data
+* There is typically a "middle man" called a Domain Name System (DNS) that translates a website address into an IP address of a server
+
+## What is the internet?
+
+* Often, the request is for the server to send you the contents of a website
+* The server responds by sending your computer an html document
+* Your browser renders that document so that it displays pretty on your screen
+
+## What is a static html server?
+
+* If the server is only responsible for delivering pre-made html files, we say that it can __serve static html files__
+* There is no __server-side processing__
+* Generally cheap (or free!) to deploy websites on such servers
+
+# Deploying flexdashboards on GitHub pages
+
+## What is GitHub pages?
+
+* [GitHub pages](https://pages.github.com/) provides a way to host __static websites__ directly from GitHub repositories
+* The service is completely free to use!
+* Deploy website by simply pushing code to a specific branch
+
+## How does this relate to GitHub pages?
+
+* GitHub pages serves static html files
+* You will create the html files for your dashboard on your computer and push them to GitHub
+* You will configure your GitHub repository to serve those html files at a particular URL
+* If you are using a shiny app for your final project, you will need to deploy it in a different way
+
+## Deploying a website to GitHub pages
+
+* We will do a demonstration using an [example flexdashboard](https://testing-apps.shinyapps.io/flexdashboard-ggplotly/)
+* First, create a directory to host your example project on your computer
+* Add the source code for the flexdashboard and save as an .Rmd file
+  * Name this file `index.Rmd`
+* Knit the document to produce a file called `index.html`
+
+## Deploying a website to GitHub pages
+
+* Initialize a git repository in your project directory
+* Open a terminal, use `cd` to navigate to your project root directory
+* Run `git init` to initialize a git repository
+* Run `git add index.Rmd index.html` to stage files for commit
+* Run `git commit -m "first commit"` to create your first commit
+
+## Deploying a website to GitHub pages
+
+* Create a GitHub repository for your example project
+* Login to GitHub and add a new repository
+  * Do not initialize the repository with a README
+* Add the repository as a remote `git remote add origin git@github.com:<your_user_name>/<your_repo_name>`
+* Push your files to the remote `git push origin main`
+
+## Deploying a website to GitHub pages
+
+* In your web browser, go to your repository's address
+* Click on Settings
+* On the left-hand side of the screen, click on Pages
+* Under Source, make sure "Deploy from a Branch" is selected
+* Under Branch select `main` and `/ (root)` as the directory for deployment
+
+## Deploying a website to GitHub pages
+
+* That is it!
+* Visit `https://<your_gh_user_name>.github.io/<your_repo_name>` to see your website
+* If you want to update your website, simply push a new version of `index.html` to your repository
+
+## Other options for deploying to GitHub pages
+
+* Depending on (whether and) how you organize your projects, it may be undesirable to have your `main` branch used for your website.
+  * want your `main` branch to contain code related to your analysis
+  * want to name your output something other than `index`
+  * do not want dashboard `html` in project root directory
+  
+* In this case, you could:
+  * create a different branch specifically for your website (typically `gh-pages`)
+  * create a folder specifically for your website (typically `/docs`)
+  
+## Automating the build process
+
+* You can use e.g., shell scripts and/or Makefiles to help automate building of your website.
+* E.g., `make site`: a Make rule that renders your dashboard with most recent code/data and moves results to `/docs` folder
+* You can use [GitHub actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) to automatically build your website every time you push new code
+  * More complicated to set up, but more convenient!
+  * Automatically render dashboard, everytime you push
+  * Example of __continuous integration__ service
+  
+## What else can you do with GitHub pages?
+
+* Create other [GitHub pages websites using `jekyll`](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll)
+  * Allows you to use markdown and easily add nice themes without knowing (much) html and css
+* Add a `.nojekyll` file to (slightly) speed up rendering times for your dashboard
+* Configure a [custom domain](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)
+
+# Deploying shiny apps on shinyapps.io
+
+## What is a dynamic server?
+
+* Dynamic servers can receive requests, __perform actions__, and __then__ return html
+* Actions could be:
+  * query a database
+  * create a figure based on a user request
+  * perform a data analysis based on user input
+  * ...
+* Deploying shiny apps requires deploying on a dynamic server
+* Generally more expensive to deploy websites on such servers
+
+## How does shiny work?
+
+* When you visit a website hosting a shiny app, your computer is sent an html document
+* The server then listens for any input that you might make
+  * move sliders, check boxes etc...
+* When your browser detects input, it sends a signal to the server
+* The server runs R code in response (according to your server.R file) 
+* The server returns the updated html
+
+## Shiny servers
+
+* Obviously, you need a dynamic server to deploy a shiny app
+* Thankfully, there are easy services to host apps
+  * [shinyapps.io](https://shinyapps.io)
+  * [Posit connect cloud](https://connect.posit.cloud/)
+* More advanced users can leverage [shiny server](https://posit.co/products/open-source/shiny-server/)
+to deploy on cloud server of their choice
+
+## shinyapps.io
+
+* Sign up for a free account (or link GitHub account)
+* Install the [`rsconnect` package](https://rstudio.github.io/rsconnect/)
+* Authorize account by running the `rsconnect::setAccountInfo` command shown
+
+## shinyapps.io
+
+* Set working directory to your app's directory
+* Confirm that the app works locally (e.g., `shiny::runApp()`)
+* Deploy by running `rsconnect::deployApp()`
+* If you change your code, deploy app again to update the version online
+
+## shinyapps.io
+
+* Some notes on packages required by your app:
+  * shinyapps will try to detect what packages are needed and put them on the server
+  * first deployment may take longer as those packages are built
+  * some limitations on where packages can come from (CRAN, GitHub are OK)
+
+## shinyapps.io
+
+* shinyapps is really only for small scale deployment of simple apps
+* Not the best option if your app requires:
+  * scalability (e.g., many users accessing at once)
+  * lots of memory (e.g., to perform an analysis)
+  * specific architecture 
+* For these, you may have to do more manual app deployment via cloud service (e.g., AWS)
+* See the [getting started guide](https://shiny.posit.co/r/articles/share/shinyapps/) and other helpful resources
+  
+  
+  
+
+
+
+
+
+
+  

@@ -1,0 +1,27 @@
+{
+    "id": "9939AFBC",
+    "path": "~/Desktop/DATA555/graph.Rmd",
+    "project_path": "graph.Rmd",
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1773434428068.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "425,20",
+        "scrollLine": "415",
+        "last_setup_crc32": "1cfbdad9a17193a8"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1777145835,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1777145835679,
+    "read_only": false,
+    "read_only_alternatives": []
+}
