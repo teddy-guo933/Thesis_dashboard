@@ -119,9 +119,13 @@ make_interactive_plot_clean <- function(plot_data, y_label, plot_title) {
 
 ## HTML Widget 1: Cardiometabolic Indicator Comparisons {.tabset}
 
+**Key takeaways:**  
+This widget compares participant-level mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, with boxplots summarizing the center and spread of the distributions in each group, and the white diamond marking the group mean. Hovering over the white diamond allows viewers to see additional summary information, including the group mean, median, and number of participants.
+
 <div style="color:#005A9C; font-weight:bold; margin-bottom:15px;">
 Hover over the white diamond in each plot to view the group mean, median, and number of participants.
 </div>
+
 
 ### Systolic Blood Pressure
 ```{r sbp-plot}
@@ -237,9 +241,6 @@ make_interactive_plot_clean(
 )
 ```
 
-**Key takeaways:**  
-This widget compares participant-level mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, with boxplots summarizing the center and spread of the distributions in each group, and the white diamond marking the group mean. Hovering over the white diamond allows viewers to see additional summary information, including the group mean, median, and number of participants.
-
 
 ```{r line-helper-function}
 make_age_line_plot <- function(data, var_name, y_label, plot_title) {
@@ -304,6 +305,11 @@ make_age_line_plot <- function(data, var_name, y_label, plot_title) {
 ```
 
 ## HTML Widget 2: Mean Cardiometabolic indicators by Age {.tabset}
+
+**Key takeaways:**  
+This widget compares age-related patterns in mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, allowing viewers to examine whether values change similarly across age in the two groups and whether one group tends to have higher values at certain ages. Hovering over each point provides additional information on age, group-specific mean value, and the number of observations contributing to that estimate.
+
+
 
 <div style="color:#005A9C; font-weight:bold; margin-bottom:15px;">
 Hover over the dots in each plot to view the participants information.
@@ -422,11 +428,6 @@ make_age_line_plot(
   plot_title = "Mean Fasting Triglycerides by Age and Group"
 )
 ```
-
-**Key takeaways:**  
-This widget compares age-related patterns in mean cardiometabolic indicators between CAH patients and female referents. Each tab shows one indicator, allowing viewers to examine whether values change similarly across age in the two groups and whether one group tends to have higher values at certain ages. Hovering over each point provides additional information on age, group-specific mean value, and the number of observations contributing to that estimate.
-
-
 
 ## Real-world Impact
 
