@@ -433,3 +433,8 @@ make_age_line_plot(
 
 This dashboard helps summarize cardiometabolic patterns among patients with congenital adrenal hyperplasia (CAH), a rare condition that may require lifelong clinical monitoring. By comparing CAH patients with matched female referents, the dashboard can help identify which cardiometabolic indicators may deserve closer attention in future clinical or epidemiologic research.
 
+## Links
+
+Dashboard HTML URL: [View Dashboard](https://teddy-guo933.github.io/Thesis_dashboard/graph.html)
+
+Github Repository: [GitHub Repository](https://github.com/teddy-guo933/Thesis_dashboard) 
